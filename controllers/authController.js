@@ -88,7 +88,7 @@ const loginUser = async(req, res) => {
         const { email, password } = req.body;
 
         // Validate input
-        if (!emaill || !password) { 
+        if (!email || !password) { 
             return res.status(400).json({
                 success: false,
                 message: 'Please provide email and password'
@@ -96,7 +96,7 @@ const loginUser = async(req, res) => {
         };
 
         // find user and include password (excluded by default)
-        const user = await user.findOne({ email }).select('+password')
+        const user = await User.findOne({ email }).select('+password')
 
         if (!user) { 
             return res.status(400).json({
