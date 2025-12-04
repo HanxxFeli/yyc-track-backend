@@ -61,6 +61,12 @@ const UserSchema = new mongoose.Schema({
     default: 'local'
   },
 
+  // OAuth Profile picture (if available, can be utilized)
+  profilePicture: { 
+    type: String,
+    default: null
+  },
+
   // Email Verification
   isEmailVerified: { 
     type: Boolean,
