@@ -1,65 +1,58 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
+/**
+ * Main Server File
+ * 
+ * Entry point for the application
+ * Configures Express server, connects to database, and starts listening for requests
+ */
 
+require('dotenv').config(); // load env variables from .env
+const express = require('express')
+const cors = require('cors')
+const connectDB = require('./config/mongoDB')
+
+// initialize Express app 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// temporary connection to MongoDB
+connectDB();
 
-// Test route
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'YYC Track API is running',
-    version: '1.0.0'
-  });
-});
+// Middleware - to be used before routes
+app.use(express.json()); // allow express to read JSON from req body
+app.use(express.urlencoded({ extended: false })); // allow express to read URL-encoded data
 
-// TODO: Routes will be added here by team members
-// const authRoutes = require('./routes/auth');
-// const userRoutes = require('./routes/user');
-// app.use('/api/auth', authRoutes);
-// app.use('/api/user', userRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
-  });
-});
+// CORS - allow requests from frontend 
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000', // frontend URL
+  credentials: true // allows cookies to be used
+}))
 
-// MongoDB Connection
-const connectDB = async () => {
-  try {
-    if (process.env.MONGO_URI) {
-      await mongoose.connect(process.env.MONGO_URI);
-      console.log('✅ MongoDB connected successfully');
-    } else {
-      console.log('⚠️  MONGO_URI not set - running without database');
+// Routes
+const authRoutes = require('./routes/authRoutes') // import created AuthRoutes
+app.use('/api/auth', authRoutes);
+
+// Temporary test route 
+app.get('/', (req, res) => { 
+  res.json({
+    message: 'YYC TRACK API is running',
+    version: '1.0.0',
+    endpoints: { 
+      auth: '/api/auth'
     }
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
-    // Don't exit in development - allow testing without DB
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
-    }
-  }
-};
+  });
+})
 
-// Start server
+// 404 - Route not Found
+app.use((req, res) => { 
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+})
+
+// Starting the server 
 const PORT = process.env.PORT || 5000;
-
-const startServer = async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
-    console.log(`📍 http://localhost:${PORT}`);
-  });
-};
-
-startServer();
+app.listen(PORT, () => { 
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+})
