@@ -109,18 +109,17 @@ const UserSchema = new mongoose.Schema({
 });
 
 // Hash the password for 'local' users before saving to the DB
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function() {
   // Only hash the password if it's modified and exists
   if (!this.isModified('password') || !this.password) {
-    return next();
+    return;
   }
 
   try {
     const salt = await bcrypt.genSalt(10); // add a random string for 10 rounds to the password before hashing
     this.password = await bcrypt.hash(this.password, salt); // creates the plain password with the hashed version
-    next(); // proceed to save the hashed password
   } catch (error) {
-    next(error);
+    throw error;
   }
 });
 

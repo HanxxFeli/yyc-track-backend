@@ -17,7 +17,7 @@ const generateToken = (id) => {
     { id }, // payload data in the json
     process.env.JWT_SECRET, // Secret key for sign in
     { 
-      expiresIn: process.env.JWT_SECRET || '7d' // token expires in 7 days
+      expiresIn: process.env.JWT_EXPIRE || '7d' // token expires in 7 days
     }
   )
 }

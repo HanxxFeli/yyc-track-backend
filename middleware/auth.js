@@ -16,7 +16,7 @@ const protect = async (req, res, next) => {
     let token;
 
     // Check if token exists in Auth header ("Authorization: Bearer <token>")
-    if (req.headers.authorization && req.headers.authorization.startsWIth('Bearer')) { 
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) { 
         try {
             // extract token from header
             token = req.headers.authorization.split(' ')[1];

@@ -58,7 +58,7 @@ const registerUser = async (req, res) => {
         });
     }
     catch (error) { 
-        console.error(`Registration error: ${error}`)
+        console.error(`Registration error: ${error.stack}`)
 
         // handle validation error from Mongoose
         if (error.name === 'ValidationError') { 
@@ -151,7 +151,7 @@ const loginUser = async(req, res) => {
         });
     }
     catch (error) { 
-        console.error(`Login error: ${error}`);
+        console.error(`Login error: ${error.stack}`);
         res.status(500).json({
             success: false,
             message: 'Server error during login'
@@ -185,14 +185,13 @@ const getCurrentUser = async (req, res) => {
         })
     } 
     catch (error) { 
-        console.error(`Ger current user error: ${error}`);
+        console.error(`Ger current user error: ${error.stack}`);
         res.status(500).json({
             success: false,
             message: 'Server error fetching user data'
         });
     }
 }
-
 
 module.exports = { 
     registerUser,

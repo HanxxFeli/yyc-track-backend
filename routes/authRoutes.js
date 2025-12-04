@@ -16,7 +16,7 @@ const { protect } = require('../middleware/auth');
  *          Controller function registerUser will be handle the route
  * @access  Public
  */
-router.post('/register', registerUser);
+router.post('/register', registerUser); 
 
 /**
  * @route   POST /api/auth/login
