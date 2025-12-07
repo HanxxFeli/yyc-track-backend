@@ -241,7 +241,7 @@ const googleAuthCallback = async (req, res) => {
         const needsPostalCode = !user.postalCode;
 
         // Redirect to frontend with token and user info
-        const frontendURL = process.env.CLIENT_URL || 'http://localhost:3000';
+        const frontendURL = process.env.CLIENT_URL || 'http://localhost:5173';
         
         // Encode data to pass to frontend
         const redirectURL = `${frontendURL}/auth/callback?token=${token}&needsPostalCode=${needsPostalCode}`;
@@ -252,7 +252,7 @@ const googleAuthCallback = async (req, res) => {
     }
     catch (error) { 
         console.error(`Google callback error: ${error.stack}`);
-        const frontendURL = process.env.CLIENT_URL || 'http://localhost:3000';
+        const frontendURL = process.env.CLIENT_URL || 'http://localhost:5173';
         res.redirect(`${frontendURL}/auth/error`);
     }
 }
