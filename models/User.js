@@ -46,6 +46,16 @@ const UserSchema = new mongoose.Schema({
     select: false   // security feature to hide password by default when querying
   },
 
+  passwordResetToken: { 
+    type: String,
+    select: false // do not return
+  },
+
+  passwordResetExpires: { 
+    type: Date,
+    select: false // do not return
+  },
+
   // Google OAuth ID
   googleId: { 
     type: String,
@@ -74,6 +84,16 @@ const UserSchema = new mongoose.Schema({
       // if user does login via OAuth, consider it as pre-verified
       return this.authMethod === 'google';
     }
+  },
+
+  emailVerificationCode: { 
+    type: String,
+    select: false // dont return
+  },
+
+  emailVerificationExpires: {
+    type: Date,
+    select: false // dont return
   },
 
   // Profile Information (OAuth users will be asked for postal code later)

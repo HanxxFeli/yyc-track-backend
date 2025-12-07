@@ -9,7 +9,18 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport')
-const { registerUser, loginUser, getCurrentUser, googleAuth, googleAuthCallback, completeOAuthProfile } = require('../controllers/authController');
+const {
+  registerUser,
+  loginUser,
+  getCurrentUser,
+  googleAuth,
+  googleAuthCallback,
+  completeOAuthProfile,
+  verifyEmail,
+  resendVerificationCode,
+  forgotPassword,
+  resetPassword
+} = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 // LOCAL ROUTES
@@ -70,6 +81,44 @@ router.get('/google/callback', passport.authenticate('google', {
  * @access  Private
  */
 router.put('/complete-profile', protect, completeOAuthProfile);
+
+// EMAIL VERIFICATION ROUTES
+
+/**
+ * @route   POST /api/auth/verify-email
+ * @desc    Verify email with 6-digit code
+ *          Protect middleware will used to validate user authentication
+ *          verifyEmail from controller will handle email verification
+ * @access  Private
+ */
+router.post('/verify-email', protect, verifyEmail);
+
+/**
+ * @route   POST /api/auth/resend-verification
+ * @desc    Resend verification code
+ *          Protect middleware will used to validate user authentication
+ *          resendVerificationCode from controller will handle resending code to user
+ * @access  Private
+ */
+router.post('/resend-verification', protect, resendVerificationCode);
+
+// Password reset routes
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Request password reset
+ *          forgotPassword from controller will send the email link to the user
+ * @access  Public
+ */
+router.post('/forgot-password', forgotPassword);
+
+/**
+ * @route   PUT /api/auth/reset-password/:token
+ * @desc    Reset password using token
+ *          resetPassword from controller will use token that was sent to the user to reset password
+ * @access  Public
+ */
+router.put('/reset-password/:token', resetPassword);
+
 
 module.exports = router;
 
