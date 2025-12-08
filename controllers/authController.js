@@ -61,7 +61,7 @@ const registerUser = async (req, res) => {
 
         // send response (excluding password)
         res.status(201).json({
-            succes: true,
+            success: true,
             message: 'User registered successfully',
             token,
             user: { 
@@ -91,7 +91,7 @@ const registerUser = async (req, res) => {
 
         // generic error handling 
         res.status(500).json({
-            succes: false,
+            success: false,
             message: 'Server error during registration'
         });
     }
@@ -159,13 +159,15 @@ const loginUser = async(req, res) => {
             message: 'Login successful',
             token,
             user: { 
+                id: user._id,
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
                 postalCode: user.postalCode,
                 role: user.role,
                 authMethod: user.authMethod,
-                profilePicture: user.profilePicture
+                profilePicture: user.profilePicture,
+                isEmailVerified: user.isEmailVerified,
             }
         });
     }
