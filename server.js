@@ -21,7 +21,7 @@ connectDB();
 // Middleware - to be used before routes
 // CORS - allow requests from frontend 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000', // frontend URL
+  origin: process.env.CLIENT_URL || 'http://localhost:5173', // frontend URL
   credentials: true // allows cookies to be used
 }))
 
