@@ -400,10 +400,28 @@ const resendVerificationCode = async (req, res) => {
         // Generate new 6 digit code
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
+        //Get email from user data
+        const email = user.email;
+
         // Update user object with new code and expiration date
         user.emailVerificationCode = verificationCode;
         user.emailVerificationExpires = Date.now() + 10 * 60 * 1000;  // 10 minutes
         await user.save(); // update user values again using mongoose save
+
+        // send the verification email to user 
+        try { 
+            await sendVerificationEmail(email, verificationCode) // use util which takes in the email of user and the randomly generated code
+        } 
+        catch (emailError) { 
+            // if email fails, still create the user but log the error (TEMPORARY implementation)
+            console.error(`Failed to send verification email: ${emailError}`)
+        }
+
+        // Send success response
+        res.status(200).json({
+            success: true,
+            message: 'Verification code sent successfully to your email'
+        });
 
     } 
     catch (error) { 
