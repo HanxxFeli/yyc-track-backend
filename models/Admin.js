@@ -1,14 +1,14 @@
 /**
  * User Model Schema
  * 
- * creates the user model schema that will be used for identifying the fields within the user object
+ * creates the admin model schema that will be used for identifying the fields within the user object
  */
 
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 // create user schema using mongoose
-const UserSchema = new mongoose.Schema({
+const AdminSchema = new mongoose.Schema({
   
   // Personal Information Section
   firstName: {
@@ -56,21 +56,6 @@ const UserSchema = new mongoose.Schema({
     select: false // do not return
   },
 
-  // Google OAuth ID
-  googleId: { 
-    type: String,
-    sparse: true, // allow multiple null values but unique non-null values
-    unique: true
-  },
-
-  // Track Authentication Method 
-  authMethod: { 
-    type: String,
-    enum: ['local', 'google'],
-    required: true,
-    default: 'local'
-  },
-
   // OAuth Profile picture (if available, can be utilized)
   profilePicture: { 
     type: String,
@@ -96,12 +81,6 @@ const UserSchema = new mongoose.Schema({
     select: false // dont return
   },
 
-  // Profile Information (OAuth users will be asked for postal code later)
-  postalCode: {
-    type: String, 
-    trim: true
-  },
-
   // Account Status
   isActive: {
     type: Boolean,
@@ -122,7 +101,7 @@ const UserSchema = new mongoose.Schema({
 });
 
 // Hash the password for 'local' users before saving to the DB
-UserSchema.pre('save', async function() {
+AdminSchema.pre('save', async function() {
   // Only hash the password if it's modified and exists
   if (!this.isModified('password') || !this.password) {
     return;
@@ -137,7 +116,7 @@ UserSchema.pre('save', async function() {
 });
 
 // Method to compare password for login and checks is password provides matches the hashed password
-UserSchema.methods.comparePassword = async function(userPassword) {
+AdminSchema.methods.comparePassword = async function(userPassword) {
   // Can't compare if there's no password (OAuth users)
   if (!this.password) {
     return false;
@@ -148,4 +127,4 @@ UserSchema.methods.comparePassword = async function(userPassword) {
 };
 
 // Export the model
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('Admin', AdminSchema);
