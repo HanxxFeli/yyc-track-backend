@@ -6,6 +6,7 @@
  */
 
 const User = require('../models/User')
+const Admin = require('../models/Admin')
 const { generateToken, verifyToken } = require('../config/jwt')
 const crypto = require('crypto')
 const { sendVerificationEmail } = require('../utils/email')
@@ -561,6 +562,163 @@ const resetPassword = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error resetting password'
+        });
+    }
+}
+
+/**
+ * @desc    Register new admin - sends verification email
+ * @route   POST /api/auth/admin/register
+ * @access  Public
+ */
+const adminRegister = async (req, res) => {
+    
+    try { 
+        const { firstName, lastName, email, password} = req.body;
+
+        // check if user already exists
+        const userExists = await Admin.findOne({ email }); // mongoose query method
+
+        if (userExists) { 
+            return res.status(400).json({
+                success: false,
+                message: 'Admin already exists with this email'
+            })
+        }
+
+        // generate random 6-digit verfication code using math library
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Create user (password will be hashed in the Admin.js file by pre-save middleware)
+        const admin = await Admin.create({ 
+            // create method from mongoose to create user
+            firstName,
+            lastName,
+            email,
+            password,
+            isEmailVerified: false, // not yet verified upon creation
+            emailVerificationCode: verificationCode,
+            emailVerificationExpires: Date.now() + 10 * 60 *1000 // 10 mins in total
+        })
+
+        // send the verification email to admin
+        try { 
+            await sendVerificationEmail(email, verificationCode) // use util which takes in the email of admin and the randomly generated code
+        } 
+        catch (emailError) { 
+            // if email fails, still create the user but log the error (TEMPORARY implementation)
+            console.error(`Failed to send verification email: ${emailError}`)
+        }
+
+        // generate JWT token
+        const token = generateToken(user._id) // mongoDB ObjectID
+
+        // send response (excluding password)
+        res.status(201).json({
+            success: true,
+            message: 'User registered successfully',
+            token,
+            user: { 
+                id: admin._id,
+                firstName: admin.firstName,
+                lastName: admin.lastName,
+                email: admin.email,
+                isEmailVerified: admin.isEmailVerified
+            }
+        });
+    }
+    catch (error) { 
+        console.error(`Registration error: ${error.stack}`)
+
+        // handle validation error from Mongoose
+        if (error.name === 'ValidationError') { 
+            const messages = Object.values(error.errors).map(err => err.message);
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: messages
+            })
+        }
+
+        // generic error handling 
+        res.status(500).json({
+            success: false,
+            message: 'Server error during registration'
+        });
+    }
+}
+
+const adminLogin = async (req, res) => {
+    try { 
+        const { email, password } = req.body;
+
+        // Validate input
+        if (!email || !password) { 
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide email and password'
+            })
+        };
+
+        // find user and include password (excluded by default)
+        const admin = await Admin.findOne({ email }).select('+password')
+
+        if (!admin) { 
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid credentials'
+            })
+        };
+
+        // check if user used OAuth (there should be no password)
+        if (admin.authMethod === 'google') { 
+            return res.status(400).json({
+                success: false,
+                message: 'This account uses Google sign-in. Please login with Google.'
+            })
+        };
+
+        // check if account is active 
+        if (!admin.isActive) { 
+            return res.status(400).json({
+                success: false,
+                message: 'Account has been deactivated'
+            })
+        };
+
+        // verify password using method created in Admin.js 
+        const isPasswordMatch = await admin.comparePassword(password)
+
+        if (!isPasswordMatch) { 
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
+            })
+        };
+
+        // generate JWT token to be sent in the response
+        const token = generateToken(admin._id)
+
+        // send response after admin has logged in 
+        res.status(200).json({
+            success: true,
+            message: 'Login successful',
+            token,
+            user: { 
+                id: admin._id,
+                firstName: admin.firstName,
+                lastName: admin.lastName,
+                email: admin.email,
+                profilePicture: admin.profilePicture,
+                isEmailVerified: admin.isEmailVerified,
+            }
+        });
+    }
+    catch (error) { 
+        console.error(`Login error: ${error.stack}`);
+        res.status(500).json({
+            success: false,
+            message: 'Server error during login'
         });
     }
 }
