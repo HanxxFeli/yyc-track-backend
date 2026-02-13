@@ -56,7 +56,6 @@ const AdminSchema = new mongoose.Schema({
     select: false // do not return
   },
 
-  // OAuth Profile picture (if available, can be utilized)
   profilePicture: { 
     type: String,
     default: null
