@@ -611,12 +611,12 @@ const adminRegister = async (req, res) => {
         }
 
         // generate JWT token
-        const token = generateToken(user._id) // mongoDB ObjectID
+        const token = generateToken(admin._id) // mongoDB ObjectID
 
         // send response (excluding password)
         res.status(201).json({
             success: true,
-            message: 'User registered successfully',
+            message: 'Admin registered successfully',
             token,
             user: { 
                 id: admin._id,

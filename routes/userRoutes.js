@@ -14,7 +14,7 @@ const {
     getAllUsers,
     getUserById
 } = require('../controllers/userController');
-const { protect, admin } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 /**
  * @route   PUT /api/users/profile
@@ -48,7 +48,7 @@ router.delete('/account', protect, deleteAccount);
  *          Use admin middleware to verify admin status
  * @access  Private/Admin
  */
-router.get('/', protect, admin, getAllUsers);
+router.get('/', protect, getAllUsers);
 
 /**
  * @route   GET /api/users/:id
@@ -57,6 +57,6 @@ router.get('/', protect, admin, getAllUsers);
  *          Use admin middleware to verify admin status
  * @access  Private/Admin
  */
-router.get('/:id', protect, admin, getUserById);
+router.get('/:id', protect, getUserById);
 
 module.exports = router;

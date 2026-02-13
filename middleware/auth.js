@@ -6,6 +6,7 @@
  */
 
 const { verifyToken } = require('../config/jwt');
+const Admin = require('../models/Admin');
 const User = require('../models/User');
 
 /**
@@ -28,6 +29,10 @@ const protect = async (req, res, next) => {
             // get user from db using id from token but dont include password
             // use the methods findByID() - get user id, and select() - exclude
             req.user = await User.findById(decoded.id).select('-password')
+
+            if (!req.user) {
+                req.user= await Admin.findById(decoded.id).select('-password')
+            }
 
             // check if user exists in database 
             if (!req.user) { 
@@ -66,21 +71,6 @@ const protect = async (req, res, next) => {
     }
 };
 
-/**
- * Admin authorization middleware (Role Checker)
- * Must be used AFTER protect middleware
- * Checks if authenticated user has admin role
- */
-const admin = (req, res, next) => { 
-    // req.user is passed through by protect middleware
-    if (req.user && req.user.role === 'admin') { 
-        next(); // Allow acces if user is admin
-    } else { 
-        res.status(403).json({ 
-            success: false,
-            message: 'Not authorized as admin' 
-        })
-    }
-};
 
-module.exports = { protect, admin };
+
+module.exports = { protect };
