@@ -199,7 +199,6 @@ const getCurrentUser = async (req, res) => {
                 lastName: user.lastName,
                 email: user.email,
                 postalCode: user.postalCode,
-                role: user.role,
                 authMethod: user.authMethod,
                 profilePicture: user.profilePicture,
                 isEmailVerified: user.isEmailVerified
@@ -971,6 +970,37 @@ const adminResetPassword = async (req, res) => {
     }
 }
 
+/**
+ * @desc    Get current logged in user 
+ * @route   GET /api/auth/me (consider currentUser as the 'me')
+ * @access  Private (requires token)
+ */
+const getCurrentAdmin = async (req, res) => { 
+    try { 
+        // find admin by id from payload
+        const admin = await Admin.findById(req.admin.id)
+
+        res.status(200).json({
+            success: true,
+            user: { 
+                id: admin._id,
+                firstName: admin.firstName,
+                lastName: admin.lastName,
+                email: admin.email,
+                profilePicture: admin.profilePicture,
+                isEmailVerified: admin.isEmailVerified
+            }
+        })
+    } 
+    catch (error) { 
+        console.error(`Ger current admin error: ${error.stack}`);
+        res.status(500).json({
+            success: false,
+            message: 'Server error fetching admin data'
+        });
+    }
+}
+
 module.exports = { 
     registerUser,
     loginUser,
@@ -987,5 +1017,6 @@ module.exports = {
     adminVerifyEmail,
     adminResendVerificationCode,
     adminForgotPassword,
-    adminResetPassword
+    adminResetPassword,
+    getCurrentAdmin
 };

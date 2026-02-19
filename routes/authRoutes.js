@@ -25,7 +25,8 @@ const {
   adminVerifyEmail,
   adminResendVerificationCode,
   adminForgotPassword,
-  adminResetPassword
+  adminResetPassword,
+  getCurrentAdmin
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -188,6 +189,15 @@ router.post('/admin/forgot-password', adminForgotPassword);
  * @access  Public
  */
 router.put('/admin/reset-password/:token', adminResetPassword);
+
+/**
+ * @route   POST /api/auth/admin/me
+ * @desc    Get current logged in admin information
+ *          Middleware protectAdmin will be used to validate admin
+ *          Controller function getCurrentAdmin will be handle the route
+ * @access  Private (requires valid JWT token)
+ */
+router.get('/admin/me', protect, getCurrentAdmin);
 
 module.exports = router;
 
