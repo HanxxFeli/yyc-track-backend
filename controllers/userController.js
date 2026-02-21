@@ -157,7 +157,7 @@ const changePassword = async (req, res) => {
 }
 
 /**
- * @desc    Delete user account (will implement soft delete - sets isActive to false)
+ * @desc    Delete user account (implemented hard delete)
  * @route   DELETE /api/users/account
  * @access  Private
  */
@@ -173,8 +173,7 @@ const deleteAccount = async (req, res) => {
         }
 
         // implement soft delete (account deactivation)
-        user.isActive = false;
-        await user.save();
+        await user.deleteOne(); // use mongoose deleteOne method to remove user from database
 
         res.status(200).json({
             success: true,
