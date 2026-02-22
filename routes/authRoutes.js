@@ -19,9 +19,18 @@ const {
   verifyEmail,
   resendVerificationCode,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  adminRegister,
+  adminLogin,
+  adminVerifyEmail,
+  adminResendVerificationCode,
+  adminForgotPassword,
+  adminResetPassword,
+  getCurrentAdmin
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+
+
 
 // LOCAL ROUTES
 
@@ -32,6 +41,7 @@ const { protect } = require('../middleware/auth');
  * @access  Public
  */
 router.post('/register', registerUser); 
+
 
 /**
  * @route   POST /api/auth/login
@@ -49,6 +59,8 @@ router.post('/login', loginUser);
  * @access  Private (requires valid JWT token)
  */
 router.get('/me', protect, getCurrentUser);
+
+
 
 // GOOGLE OAUTH ROUTES
 
@@ -82,6 +94,8 @@ router.get('/google/callback', passport.authenticate('google', {
  */
 router.put('/complete-profile', protect, completeOAuthProfile);
 
+
+
 // EMAIL VERIFICATION ROUTES
 
 /**
@@ -102,7 +116,10 @@ router.post('/verify-email', protect, verifyEmail);
  */
 router.post('/resend-verification', protect, resendVerificationCode);
 
+
+
 // Password reset routes
+
 /**
  * @route   POST /api/auth/forgot-password
  * @desc    Request password reset
@@ -119,6 +136,68 @@ router.post('/forgot-password', forgotPassword);
  */
 router.put('/reset-password/:token', resetPassword);
 
+
+
+// ADMIN ROUTES
+
+/**
+ * @route   POST /api/auth/admin/register
+ * @desc    Register a new admin (local authentication)
+ *          Controller function adminRegister will be handle the route
+ * @access  Public
+ */
+router.post('/admin/register', adminRegister);
+
+/**
+ * @route   POST /api/auth/admin/login
+ * @desc    Login an admin (local authentication)
+ *          Controller function adminLogin will be handle the route
+ * @access  Public
+ */
+router.post('/admin/login', adminLogin);
+
+/**
+ * @route   POST /api/auth/admin/verify-email
+ * @desc    Verify email with 6-digit code
+ *          Protect middleware will used to validate admin authentication
+ *          verifyEmail from controller will handle email verification
+ * @access  Private
+ */
+router.post('/admin/verify-email', protect, adminVerifyEmail);
+
+/**
+ * @route   POST /api/auth/admin/resend-verification
+ * @desc    Resend verification code
+ *          Protect middleware will used to validate admin authentication
+ *          resendVerificationCode from controller will handle resending code to admin
+ * @access  Private
+ */
+router.post('/admin/resend-verification', protect, adminResendVerificationCode);
+
+/**
+ * @route   POST /api/auth/admin/forgot-password
+ * @desc    Request password reset
+ *          forgotPassword from controller will send the email link to the admin
+ * @access  Public
+ */
+router.post('/admin/forgot-password', adminForgotPassword);
+
+/**
+ * @route   PUT /api/auth/admin/reset-password/:token
+ * @desc    Reset password using token
+ *          resetPassword from controller will use token that was sent to the admin to reset password
+ * @access  Public
+ */
+router.put('/admin/reset-password/:token', adminResetPassword);
+
+/**
+ * @route   POST /api/auth/admin/me
+ * @desc    Get current logged in admin information
+ *          Middleware protectAdmin will be used to validate admin
+ *          Controller function getCurrentAdmin will be handle the route
+ * @access  Private (requires valid JWT token)
+ */
+router.get('/admin/me', protect, getCurrentAdmin);
 
 module.exports = router;
 
