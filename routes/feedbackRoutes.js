@@ -1,38 +1,34 @@
-//represents a user's written feedback for a charging station. Feedback is
-//categorised by intent (issue, suggestion, compliment, or general) and can
-//optionally be submitted anonymously.
+/**
+ * Feedback Routes
+ *
+ * Defines all feedback endpoints for the YYC-Track app.
+ * All logic is handled in ratingController.js
+ * mergeParams allows access to :stationId from the parent route in app.js
+ *
+ * POST /api/stations/:stationId/feedback - submit feedback for a station
+ * GET  /api/stations/:stationId/feedback - get all feedback for a station
+ */
 
-const mongoose = require("mongoose");
+const express = require("express");
+const router = express.Router({ mergeParams: true });
+const { protect } = require("../middleware/auth");
+const {
+  submitFeedback,
+  getFeedback,
+} = require("../controllers/ratingController");
 
-const feedbackSchema = new mongoose.Schema(
-  {
-    // The station this feedback refers to
-    station: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Station",
-      required: true,
-    },
+/**
+ * @route   POST /api/stations/:stationId/feedback
+ * @desc    Submit written feedback categorised as issue, suggestion, compliment, or general
+ * @access  Private
+ */
+router.post("/", protect, submitFeedback);
 
-    // The user submitting the feedback
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    // The feedback text, capped at 1000 characters
+/**
+ * @route   GET /api/stations/:stationId/feedback
+ * @desc    Get all feedback for a station, optionally filtered by ?category=
+ * @access  Public
+ */
+router.get("/", getFeedback);
 
-    comment: { type: String, required: true, maxlength: 1000 },
-    // Classifies the nature of the feedback to aid filtering and triage
-
-    category: {
-      type: String,
-      enum: ["issue", "suggestion", "compliment", "general"],       //rewtie category
-      default: "general",
-    },
-
-    // Controls whether the submitting user's identity is shown publicly
-    isAnonymous: { type: Boolean, default: false },
-
-    // Upvote counter
-    // helpful: { type: Number, default: 0 }
-  },
-  { timestamps: true },
-);
-
-module.exports = mongoose.model("Feedback", feedbackSchema);
+module.exports = router;
