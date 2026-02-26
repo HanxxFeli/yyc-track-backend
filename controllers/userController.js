@@ -174,7 +174,7 @@ const deleteAccount = async (req, res) => {
 
         // implement soft delete (account deactivation)
         await user.deleteOne(); // use mongoose deleteOne method to remove user from database
-
+        
         res.status(200).json({
             success: true,
             message: 'Account deactivated successfully'         
