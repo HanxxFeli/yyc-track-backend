@@ -82,7 +82,7 @@ const getFeedbackByStation = async (req, res) => {
     const feedback = await Feedback.find({
       stationId,
       isDeleted: false,
-      flagStatus: { $ne: "deleted" },
+      flagStatus: { $eq: "none" },
     })
       .populate("userId", "username")
       .sort(sortOption)
@@ -92,7 +92,7 @@ const getFeedbackByStation = async (req, res) => {
     const total = await Feedback.countDocuments({
       stationId,
       isDeleted: false,
-      flagStatus: { $ne: "deleted" },
+      flagStatus: { $eq: "none" },
     });
 
     res.json({
@@ -134,4 +134,29 @@ const deleteFeedback = async (req, res) => {
     console.error("deleteFeedback error:", err);
     res.status(500).json({ error: "Server error. Please try again." });
   }
+};
+
+// -------------------------------------------------------
+// GET /api/feedback/mine
+// Get the logged-in user's own feedback (all stations)
+// -------------------------------------------------------
+const getMyFeedback = async (req, res) => {
+  try {
+    const feedback = await Feedback.find({
+      userId: req.user.id,
+      isDeleted: false,
+    }).populate("stationId", "name line");
+
+    res.json({ feedback });
+  } catch (err) {
+    console.error("getMyFeedback error:", err);
+    res.status(500).json({ error: "Server error. Please try again." });
+  }
+};
+
+module.exports = {
+  submitFeedback,
+  getFeedbackByStation,
+  deleteFeedback,
+  getMyFeedback,
 };
