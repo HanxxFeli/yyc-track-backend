@@ -23,7 +23,7 @@ const feedbackSchema = new mongoose.Schema(
     flagCount: { type: Number, default: 0 },
     flagStatus: {
       type: String,
-      enum: ["none", "pending", "approved", "deleted"],
+      enum: ["none", "pending", "archived"],
       default: "none",
     },
     isDeleted: { type: Boolean, default: false },
