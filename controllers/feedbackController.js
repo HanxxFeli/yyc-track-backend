@@ -1,6 +1,7 @@
 const Feedback = require("../models/Feedback");
 const Station = require("../models/Station");
 const User = require("../models/User");
+const { recalculateStationCEI }= require("../utils/cei");
 
 /**
  * @desc    Submit feedback for a station
@@ -45,6 +46,9 @@ const submitFeedback = async (req, res) => {
       ratings,
       comment,
     });
+
+    // Recalculate CEI and averages for this station
+    await recalculateStationCEI(stationId);
 
     res.status(201).json({
       message: "Feedback submitted successfully.",
@@ -128,6 +132,9 @@ const deleteFeedback = async (req, res) => {
         .json({ error: "You are not authorized to delete this feedback." });
     }
     await feedback.deleteOne();
+
+    // Recalculate CEI and averages for this station
+    await recalculateStationCEI(feedback.stationId);
 
     res.json({ message: "Feedback deleted successfully." });
   } catch (err) {
