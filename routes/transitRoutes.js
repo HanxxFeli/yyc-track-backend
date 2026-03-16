@@ -22,7 +22,7 @@ const {
   getAllTransit,
 } = require('../controllers/transitController');
 
-const { protectAdmin } = require('../middleware/authMiddleware');
+const { protectAdmin } = require('../middleware/auth');
 
 // ─── Admin / Azure Function Routes ───────────────────────────────────────────
 
