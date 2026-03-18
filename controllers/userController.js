@@ -6,6 +6,7 @@
  */
 
 const User = require('../models/User');
+const Feedback= require('../models/Feedback')
 const bcrypt = require('bcryptjs');
 
 /**
@@ -172,7 +173,22 @@ const deleteAccount = async (req, res) => {
             });
         }
 
-        // implement soft delete (account deactivation)
+        // Get all feedback by this user before deleting
+        const userFeedbacks = await Feedback.find({ userId: req.user.id });
+
+        // Get unique station IDs that will be affected
+        const affectedStations = [
+            ...new Set(userFeedbacks.map((f) => f.stationId.toString())),
+        ];
+
+        // Delete all their feedback
+        await Feedback.deleteMany({ userId: req.user.id });
+        
+         // Recalculate CEI for every affected station
+        await Promise.all(
+            affectedStations.map((stationId) => recalculateStationCEI(stationId))
+        );
+
         await user.deleteOne(); // use mongoose deleteOne method to remove user from database
         
         res.status(200).json({

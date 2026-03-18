@@ -2,6 +2,7 @@ const Feedback = require("../models/Feedback");
 const Station = require("../models/Station");
 const User = require("../models/User");
 const { recalculateStationCEI }= require("../utils/cei");
+const { analyzeContent } = require("../utils/contentSafety");
 
 /**
  * @desc    Submit feedback for a station
@@ -40,11 +41,15 @@ const submitFeedback = async (req, res) => {
       }
     }
 
+    const safetyResult = await analyzeContent(comment);
+    const flagStatus = safetyResult.flagged ? "pending" : "none";
+
     const feedback = await Feedback.create({
       userId: req.user.id,
       stationId,
       ratings,
       comment,
+      flagStatus
     });
 
     // Recalculate CEI and averages for this station
@@ -52,7 +57,10 @@ const submitFeedback = async (req, res) => {
 
     res.status(201).json({
       message: "Feedback submitted successfully.",
-      feedbackId: feedback._id
+      feedbackId: feedback._id,
+      ...(safetyResult.flagged && {
+        notice: "Your comment is under review and will be visible once approved.",
+      }),
     });
   } catch (err) {
     
