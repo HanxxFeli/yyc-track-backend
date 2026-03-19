@@ -1,7 +1,7 @@
 const Feedback = require("../models/Feedback");
 const Station = require("../models/Station");
 const User = require("../models/User");
-const { recalculateStationCEI }= require("../utils/cei");
+const { recalculateStationCEI } = require("../utils/cei");
 const { analyzeContent } = require("../utils/contentSafety");
 
 /**
@@ -13,19 +13,16 @@ const submitFeedback = async (req, res) => {
   try {
     const { stationId, ratings, comment } = req.body;
 
-    // Validate station exists
     const station = await Station.findById(stationId);
     if (!station) {
       return res.status(404).json({ error: "Station not found." });
     }
 
-    //Validate user exists
-    const user= await User.findById(req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
 
-    // Validate all rating fields are present
     const requiredFields = [
       "safety",
       "cleanliness",
@@ -41,6 +38,7 @@ const submitFeedback = async (req, res) => {
       }
     }
 
+    // Run comment through Azure Content Safety
     const safetyResult = await analyzeContent(comment);
     const flagStatus = safetyResult.flagged ? "pending" : "none";
 
@@ -49,10 +47,9 @@ const submitFeedback = async (req, res) => {
       stationId,
       ratings,
       comment,
-      flagStatus
+      flagStatus,
     });
 
-    // Recalculate CEI and averages for this station
     await recalculateStationCEI(stationId);
 
     res.status(201).json({
@@ -63,21 +60,20 @@ const submitFeedback = async (req, res) => {
       }),
     });
   } catch (err) {
-    
     console.error("submitFeedback error:", err);
     res.status(500).json({ error: "Server error. Please try again." });
   }
 };
 
 /**
- * @desc    Get feedback for a station with pagination and sorting
+ * @desc    Get all feedback for a station (no pagination)
  * @route   GET /api/feedback/station/:stationId
  * @access  Public
  */
 const getFeedbackByStation = async (req, res) => {
   try {
     const { stationId } = req.params;
-    const { page = 1, limit = 20, sort = "newest" } = req.query;
+    const { sort = "newest" } = req.query;
 
     const station = await Station.findById(stationId);
     if (!station) {
@@ -89,29 +85,20 @@ const getFeedbackByStation = async (req, res) => {
         ? { createdAt: 1 }
         : sort === "rating"
         ? { "ratings.overall": -1 }
-        : { createdAt: -1 }; // default: newest
+        : { createdAt: -1 };
 
     const feedback = await Feedback.find({
       stationId,
       isDeleted: false,
-      flagStatus: { $eq: "none" },
+      flagStatus: { $ne: "pending" }, // show "none" and "archived"
     })
       .populate("userId", "username")
-      .sort(sortOption)
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
-
-    const total = await Feedback.countDocuments({
-      stationId,
-      isDeleted: false,
-      flagStatus: { $eq: "none" },
-    });
+      .sort(sortOption);
 
     res.json({
       stationId,
       stationName: station.name,
-      totalFeedback: total,
-      page: Number(page),
+      totalFeedback: feedback.length,
       results: feedback,
     });
   } catch (err) {
@@ -121,7 +108,26 @@ const getFeedbackByStation = async (req, res) => {
 };
 
 /**
- * @desc    Delete feedback (only by the user who submitted it)
+ * @desc    Get the logged-in user's own feedback across all stations
+ * @route   GET /api/feedback/mine
+ * @access  Private
+ */
+const getMyFeedback = async (req, res) => {
+  try {
+    const feedback = await Feedback.find({
+      userId: req.user.id,
+      isDeleted: false,
+    }).populate("stationId", "name line");
+
+    res.json({ feedback });
+  } catch (err) {
+    console.error("getMyFeedback error:", err);
+    res.status(500).json({ error: "Server error. Please try again." });
+  }
+};
+
+/**
+ * @desc    Delete own feedback (soft delete)
  * @route   DELETE /api/feedback/:feedbackId
  * @access  Private
  */
@@ -139,9 +145,9 @@ const deleteFeedback = async (req, res) => {
         .status(403)
         .json({ error: "You are not authorized to delete this feedback." });
     }
-    await feedback.deleteOne();
 
-    // Recalculate CEI and averages for this station
+    await feedback.deleteOne()
+
     await recalculateStationCEI(feedback.stationId);
 
     res.json({ message: "Feedback deleted successfully." });
@@ -151,20 +157,111 @@ const deleteFeedback = async (req, res) => {
   }
 };
 
-// -------------------------------------------------------
-// GET /api/feedback/mine
-// Get the logged-in user's own feedback (all stations)
-// -------------------------------------------------------
-const getMyFeedback = async (req, res) => {
+// ─────────────────────────────────────────────
+// ADMIN CONTROLLERS
+// ─────────────────────────────────────────────
+
+/**
+ * @desc    Get all pending feedback awaiting admin review
+ * @route   GET /api/feedback/admin/pending
+ * @access  Admin
+ */
+const getPendingFeedback = async (req, res) => {
   try {
     const feedback = await Feedback.find({
-      userId: req.user.id,
+      flagStatus: "pending",
       isDeleted: false,
-    }).populate("stationId", "name line");
+    })
+      .populate("userId", "username email")
+      .populate("stationId", "name line")
+      .sort({ createdAt: -1 });
 
-    res.json({ feedback });
+    res.json({
+      total: feedback.length,
+      results: feedback,
+    });
   } catch (err) {
-    console.error("getMyFeedback error:", err);
+    console.error("getPendingFeedback error:", err);
+    res.status(500).json({ error: "Server error. Please try again." });
+  }
+};
+
+/**
+ * @desc    Get all archived feedback (reviewed and approved by admin)
+ * @route   GET /api/feedback/admin/archived
+ * @access  Admin
+ */
+const getArchivedFeedback = async (req, res) => {
+  try {
+    const feedback = await Feedback.find({
+      flagStatus: "archived",
+      isDeleted: false,
+    })
+      .populate("userId", "username email")
+      .populate("stationId", "name line")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      total: feedback.length,
+      results: feedback,
+    });
+  } catch (err) {
+    console.error("getArchivedFeedback error:", err);
+    res.status(500).json({ error: "Server error. Please try again." });
+  }
+};
+
+/**
+ * @desc    Approve pending feedback — moves to archived, becomes public, counts in CEI
+ * @route   PATCH /api/feedback/admin/:feedbackId/approve
+ * @access  Admin
+ */
+const approveFeedback = async (req, res) => {
+  try {
+    const feedback = await Feedback.findById(req.params.feedbackId);
+    if (!feedback) {
+      return res.status(404).json({ error: "Feedback not found." });
+    }
+
+    if (feedback.flagStatus !== "pending") {
+      return res
+        .status(400)
+        .json({ error: "Only pending feedback can be approved." });
+    }
+
+    feedback.flagStatus = "archived";
+    await feedback.save();
+
+    // Now counts toward CEI since $ne "pending" includes "archived"
+    await recalculateStationCEI(feedback.stationId);
+
+    res.json({ message: "Feedback approved and is now publicly visible." });
+  } catch (err) {
+    console.error("approveFeedback error:", err);
+    res.status(500).json({ error: "Server error. Please try again." });
+  }
+};
+
+/**
+ * @desc    Admin permanently deletes inappropriate feedback
+ * @route   DELETE /api/feedback/admin/:feedbackId
+ * @access  Admin
+ */
+const adminDeleteFeedback = async (req, res) => {
+  try {
+    const feedback = await Feedback.findById(req.params.feedbackId);
+    if (!feedback) {
+      return res.status(404).json({ error: "Feedback not found." });
+    }
+
+    const stationId = feedback.stationId;
+    await feedback.deleteOne();
+
+    await recalculateStationCEI(stationId);
+
+    res.json({ message: "Feedback permanently deleted." });
+  } catch (err) {
+    console.error("adminDeleteFeedback error:", err);
     res.status(500).json({ error: "Server error. Please try again." });
   }
 };
@@ -172,6 +269,10 @@ const getMyFeedback = async (req, res) => {
 module.exports = {
   submitFeedback,
   getFeedbackByStation,
-  deleteFeedback,
   getMyFeedback,
+  deleteFeedback,
+  getPendingFeedback,
+  getArchivedFeedback,
+  approveFeedback,
+  adminDeleteFeedback,
 };
