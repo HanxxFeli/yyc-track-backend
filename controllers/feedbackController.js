@@ -117,6 +117,7 @@ const getMyFeedback = async (req, res) => {
     const feedback = await Feedback.find({
       userId: req.user.id,
       isDeleted: false,
+      flagStatus: { $ne: "pending" }, // show "none" and "archived"
     }).populate("stationId", "name line");
 
     res.json({ feedback });
@@ -212,6 +213,30 @@ const getArchivedFeedback = async (req, res) => {
 };
 
 /**
+ * @desc    Get all archived feedback (reviewed and approved by admin)
+ * @route   GET /api/feedback/admin/archived
+ * @access  Admin
+ */
+const getDeletedFeedback = async (req, res) => {
+  try {
+    const feedback = await Feedback.find({
+      isDeleted: true,
+    })
+      .populate("userId", "username email")
+      .populate("stationId", "name line")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      total: feedback.length,
+      results: feedback,
+    });
+  } catch (err) {
+    console.error("getArchivedFeedback error:", err);
+    res.status(500).json({ error: "Server error. Please try again." });
+  }
+};
+
+/**
  * @desc    Approve pending feedback — moves to archived, becomes public, counts in CEI
  * @route   PATCH /api/feedback/admin/:feedbackId/approve
  * @access  Admin
@@ -255,7 +280,9 @@ const adminDeleteFeedback = async (req, res) => {
     }
 
     const stationId = feedback.stationId;
-    await feedback.deleteOne();
+    // Soft delete: mark as deleted instead of removing
+    feedback.isDeleted = true;
+    await feedback.save();
 
     await recalculateStationCEI(stationId);
 
@@ -275,4 +302,5 @@ module.exports = {
   getArchivedFeedback,
   approveFeedback,
   adminDeleteFeedback,
+  getDeletedFeedback
 };

@@ -978,7 +978,7 @@ const adminResetPassword = async (req, res) => {
 const getCurrentAdmin = async (req, res) => { 
     try { 
         // find admin by id from payload
-        const admin = await Admin.findById(req.admin.id)
+        const admin = await Admin.findById(req.user.id)
 
         res.status(200).json({
             success: true,
@@ -993,7 +993,7 @@ const getCurrentAdmin = async (req, res) => {
         })
     } 
     catch (error) { 
-        console.error(`Ger current admin error: ${error.stack}`);
+        console.error(`Get current admin error: ${error.stack}`);
         res.status(500).json({
             success: false,
             message: 'Server error fetching admin data'

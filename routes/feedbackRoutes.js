@@ -8,6 +8,7 @@ const {
   deleteFeedback,
   getPendingFeedback,
   getArchivedFeedback,
+  getDeletedFeedback,
   approveFeedback,
   adminDeleteFeedback,
 } = require("../controllers/feedbackController");
@@ -31,6 +32,7 @@ router.delete("/:feedbackId", protect, deleteFeedback);
 // ─────────────────────────────────────────────
 router.get("/admin/pending", protectAdmin, getPendingFeedback);
 router.get("/admin/archived", protectAdmin, getArchivedFeedback);
+router.get("/admin/deleted", protectAdmin, getDeletedFeedback);
 router.patch("/admin/:feedbackId/approve", protectAdmin, approveFeedback);
 router.delete("/admin/:feedbackId", protectAdmin, adminDeleteFeedback);
 
