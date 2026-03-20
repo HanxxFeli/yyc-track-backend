@@ -30,9 +30,63 @@ const protect = async (req, res, next) => {
             // use the methods findByID() - get user id, and select() - exclude
             req.user = await User.findById(decoded.id).select('-password')
 
-            if (!req.user) {
-                req.user= await Admin.findById(decoded.id).select('-password')
-            }
+            // check if user exists in database 
+            if (!req.user) { 
+                return res.status(401).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            };
+
+            // check if user account is active
+            if (!req.user.isActive) { 
+                return res.status(401).json({
+                    success: false,
+                    message: 'Account has been deactivated'
+                })
+            };
+
+            // user is authenticated - proceed to next middleware
+            next();
+        }
+        catch (error) { 
+            console.error(`Auth middleware error: ${error.message}`)
+            return res.status(401).json({
+                success: false,
+                message: 'Not authorized, token failed'
+            })
+        }
+    } 
+    
+    // no token provided 
+    if (!token) { 
+        return res.status(401).json({
+            success: false,
+            message: 'Not authorized, token failed'  
+        })
+    }
+};
+
+/**
+ * Protect routes - verify JWT token and authenticate user
+ * Use this middleware on any route that requires authentication
+ */
+const protectAdmin = async (req, res, next) => { 
+    let token;
+
+    // Check if token exists in Auth header ("Authorization: Bearer <token>")
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) { 
+        try {
+            // extract token from header
+            token = req.headers.authorization.split(' ')[1];
+
+            
+            // verify token using helper and returns decoded payload
+            const decoded = verifyToken(token)
+
+            // get user from db using id from token but dont include password
+            // use the methods findByID() - get user id, and select() - exclude
+            req.user = await Admin.findById(decoded.id).select('-password')
 
             // check if user exists in database 
             if (!req.user) { 
@@ -72,5 +126,4 @@ const protect = async (req, res, next) => {
 };
 
 
-
-module.exports = { protect };
+module.exports = { protect, protectAdmin };

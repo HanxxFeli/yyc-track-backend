@@ -33,7 +33,7 @@ const stationSchema = new mongoose.Schema(
     line: {
       type: String,
       enum: {
-        values: ['Red', 'Blue'],
+        values: ['Red', 'Blue', 'Both'],
         message: 'Line must be either Red or Blue',
       },
       required: [true, 'Line is required'],

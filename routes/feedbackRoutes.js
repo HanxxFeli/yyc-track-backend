@@ -1,37 +1,39 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middleware/auth"); // your existing auth middleware
+const { protect, protectAdmin } = require("../middleware/auth");
 const {
   submitFeedback,
   getFeedbackByStation,
-  deleteFeedback,
   getMyFeedback,
+  deleteFeedback,
+  getPendingFeedback,
+  getArchivedFeedback,
+  getDeletedFeedback,
+  approveFeedback,
+  adminDeleteFeedback,
 } = require("../controllers/feedbackController");
 
-// Public
+// ─────────────────────────────────────────────
+// PUBLIC
+// ─────────────────────────────────────────────
 router.get("/station/:stationId", getFeedbackByStation);
 
-// Protected (logged in users)
-
-/**
- * @route   GET /api/feedback/mine
- * @desc    Get current logged in user's feedback
- * @access  Private (requires valid JWT token)
- */
+// ─────────────────────────────────────────────
+// PRIVATE (logged in users)
+// ─────────────────────────────────────────────
 router.get("/mine", protect, getMyFeedback);
-
-/**
- * @route   POST /api/feedback/mine
- * @desc    Submit feedback for current logged in user
- * @access  Private (requires valid JWT token)
- */
 router.post("/", protect, submitFeedback);
-
-/**
- * @route   DELETE /api/feedback/:feedbackId
- * @desc    Delete feedback by ID (only by the user who submitted it)
- * @access  Private (requires valid JWT token)
- */
 router.delete("/:feedbackId", protect, deleteFeedback);
+
+// ─────────────────────────────────────────────
+// ADMIN
+// Note: specific admin routes must come before /:feedbackId
+// to avoid Express matching "admin" as a feedbackId
+// ─────────────────────────────────────────────
+router.get("/admin/pending", protectAdmin, getPendingFeedback);
+router.get("/admin/archived", protectAdmin, getArchivedFeedback);
+router.get("/admin/deleted", protectAdmin, getDeletedFeedback);
+router.patch("/admin/:feedbackId/approve", protectAdmin, approveFeedback);
+router.delete("/admin/:feedbackId", protectAdmin, adminDeleteFeedback);
 
 module.exports = router;
